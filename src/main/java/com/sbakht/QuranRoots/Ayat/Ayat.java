@@ -9,9 +9,27 @@ public class Ayat {
     private Integer ayatNumber;
     private List<Word> words;
     private int level;
+    private String translation;
+    private String arabic;
 
     public Ayat() {
 
+    }
+
+    public String getArabic() {
+        return arabic;
+    }
+
+    public void setArabic(String arabic) {
+        this.arabic = arabic;
+    }
+
+    public String getTranslation() {
+        return translation;
+    }
+
+    public void setTranslation(String translation) {
+        this.translation = translation;
     }
 
     public int getLevel() {
