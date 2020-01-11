@@ -32,10 +32,36 @@ public class SurahService {
 
             this.surahs = mapper.readValue(inputStream, new TypeReference<List<Surah>>() {
             });
+
+            for (Surah surah : this.surahs) {
+                int surahNumber = surah.getSurahNumber();
+
+                List<SurahText> translationTexts = this.getApiSurahs("FullTranslation");
+                List<SurahText> arabicTexts = this.getApiSurahs("UthmaniQuran");
+
+                for (Ayat ayat : surah.getAyats()) {
+                    int ayatNumber = ayat.getAyatNumber();
+                    ayat.setTranslation(getText(translationTexts, surahNumber, ayatNumber));
+                    ayat.setArabic(getText(arabicTexts, surahNumber, ayatNumber));
+                }
+            }
         } catch (IOException e) {
             System.out.println("Unable to fetch surahs: " + e.getMessage());
             this.surahs = new ArrayList<>();
         }
+    }
+
+    /**
+     * Returns the text value of an ayat given all the surahs
+     *
+     * @param surahs
+     * @param surahNumber
+     * @param ayahNumber
+     * @return String
+     */
+    private String getText(List<SurahText> surahs, int surahNumber, int ayahNumber) {
+        SurahText surah = surahs.stream().filter(s -> s.getSurahNumber() == surahNumber).findFirst().get();
+        return surah.getAyahs().stream().filter(ayah -> ayah.getAyatNumber() == ayahNumber).findFirst().get().getText();
     }
 
     private int avg(List<Integer> levels) {
@@ -55,38 +81,12 @@ public class SurahService {
             Surah clonedSurah = new Surah();
             clonedSurah.setSurahNumber(surah.getSurahNumber());
             clonedSurah.setAyats(ayatsByLevel);
-
-            // TODO: refactor this
-            List<SurahText> allSurahsTranslations = this.getApiSurahs("FullTranslation");
-            SurahText surahText = allSurahsTranslations.stream()
-                    .filter(s -> s.getSurahNumber() == surah.getSurahNumber())
-                    .findFirst().get();
-
-            for (Ayat ayat : clonedSurah.getAyats()) {
-                com.sbakht.QuranRoots.AlQuranApi.Ayat apiAyah = surahText.getAyahs().stream()
-                        .filter(ayah -> ayah.getAyatNumber() == ayat.getAyatNumber())
-                        .findFirst().get();
-                ayat.setTranslation(apiAyah.getText());
-            }
-
-            List<SurahText> allSurahsArabic = this.getApiSurahs("UthmaniQuran");
-            SurahText surahTextA = allSurahsArabic.stream()
-                    .filter(s -> s.getSurahNumber() == surah.getSurahNumber())
-                    .findFirst().get();
-
-            for (Ayat ayat : clonedSurah.getAyats()) {
-                com.sbakht.QuranRoots.AlQuranApi.Ayat apiAyah = surahTextA.getAyahs().stream()
-                        .filter(ayah -> ayah.getAyatNumber() == ayat.getAyatNumber())
-                        .findFirst().get();
-                ayat.setArabic(apiAyah.getText());
-            }
-
             clonedSurahs.add(clonedSurah);
         }
         return clonedSurahs;
     }
 
-    public List<SurahText> getApiSurahs(String str) {
+    private List<SurahText> getApiSurahs(String str) {
 
         try {
             InputStream inputStream = TypeReference.class.getResourceAsStream("/json/" + str + ".json");
